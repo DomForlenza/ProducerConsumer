@@ -420,14 +420,14 @@
     outline: none;
     transition: border-color 0.15s;
   }
-  .team-name-input:focus { border-bottom-color: #d946ef; }
+  .team-name-input:focus { border-bottom-color: var(--team-color, #d946ef); }
   .team-name-input::placeholder { color: #444; }
   .team-score {
     font-size: 1.45rem;
     font-weight: 900;
     min-width: 2.2rem;
     text-align: center;
-    color: #d946ef;
+    color: var(--team-color, #d946ef);
     letter-spacing: -0.5px;
   }
   .score-btn {
@@ -527,7 +527,7 @@
   .team-chip-score {
     font-size: 1.1rem;
     font-weight: 900;
-    color: #d946ef;
+    color: var(--team-color, #d946ef);
     min-width: 1.6rem;
     text-align: center;
   }
@@ -860,6 +860,7 @@ function escapeHtml(str) {
 ══════════════════════════════════════════════════ */
 const MAX_TEAMS = 6;
 const STORAGE_KEY = 'triviaTeams';
+const TEAM_COLORS = ['#d946ef', '#f97316', '#22d3ee', '#4ade80', '#facc15', '#f87171'];
 
 function loadTeams() {
   try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || []; }
@@ -916,6 +917,7 @@ function renderHomeScoreboard(focusIdx) {
   teams.forEach((team, idx) => {
     const row = document.createElement('div');
     row.className = 'team-row';
+    row.style.setProperty('--team-color', TEAM_COLORS[idx % TEAM_COLORS.length]);
     row.innerHTML = `
       <input class="team-name-input" type="text" placeholder="Team ${idx + 1}" maxlength="24"
              aria-label="Team ${idx + 1} name" value="${escapeAttr(team.name)}">
@@ -949,6 +951,7 @@ function renderGameScoreboard() {
   teams.forEach((team, idx) => {
     const chip = document.createElement('div');
     chip.className = 'team-chip';
+    chip.style.setProperty('--team-color', TEAM_COLORS[idx % TEAM_COLORS.length]);
     const displayName = escapeHtml(team.name.trim() || `Team ${idx + 1}`);
     chip.innerHTML = `
       <span class="team-chip-name">${displayName}</span>
