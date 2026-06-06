@@ -380,6 +380,183 @@
     transition: border-color 0.15s, color 0.15s;
   }
   .reset-btn:hover { border-color: #555; color: var(--text); }
+
+  /* ── SCOREBOARD (HOME) ───────────────────────────── */
+  .scoreboard-section {
+    max-width: min(480px, 100%);
+    margin: 2.5rem auto 0;
+    width: 100%;
+  }
+  .scoreboard-heading {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.9rem;
+    text-align: center;
+  }
+  .team-list { display: flex; flex-direction: column; gap: 0.55rem; }
+  .team-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface);
+    border: 1px solid #252525;
+    border-radius: 12px;
+    padding: 0.55rem 0.75rem;
+  }
+  .team-name-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid transparent;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 0.15rem 0.25rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .team-name-input:focus { border-bottom-color: #d946ef; }
+  .team-name-input::placeholder { color: #444; }
+  .team-score {
+    font-size: 1.45rem;
+    font-weight: 900;
+    min-width: 2.2rem;
+    text-align: center;
+    color: #d946ef;
+    letter-spacing: -0.5px;
+  }
+  .score-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #333;
+    border-radius: 9px;
+    background: none;
+    color: var(--text);
+    font-size: 1.15rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.13s, border-color 0.13s, color 0.13s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .score-btn:hover { background: #222; }
+  .score-btn.plus:hover  { border-color: #4ade80; color: #4ade80; }
+  .score-btn.minus:hover { border-color: #f87171; color: #f87171; }
+  .remove-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: none;
+    color: #3a3a3a;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: color 0.13s, background 0.13s;
+    flex-shrink: 0;
+  }
+  .remove-btn:hover { color: #f87171; background: rgba(248,113,113,0.1); }
+  .scoreboard-actions { margin-top: 0.7rem; }
+  .add-team-btn {
+    width: 100%;
+    background: none;
+    border: 1px dashed #333;
+    border-radius: 10px;
+    color: #555;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .add-team-btn:hover:not(:disabled) { border-color: #666; color: var(--muted); }
+  .add-team-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+  /* ── SCOREBOARD (GAME — sticky bottom bar) ───────── */
+  .scoreboard-game {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    border-top: 1px solid #1e1e1e;
+    margin-top: 2rem;
+    margin-left:  calc(-1 * clamp(1.5rem, 4vw, 3rem));
+    margin-right: calc(-1 * clamp(1.5rem, 4vw, 3rem));
+    padding: 0.65rem clamp(1.5rem, 4vw, 3rem);
+    z-index: 9;
+  }
+  .scoreboard-game-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: stretch;
+  }
+  .team-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--surface);
+    border: 1px solid #252525;
+    border-radius: 10px;
+    padding: 0.3rem 0.45rem 0.3rem 0.7rem;
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+  .team-chip-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .team-chip-score {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #d946ef;
+    min-width: 1.6rem;
+    text-align: center;
+  }
+  .chip-btn {
+    width: 26px;
+    height: 26px;
+    border: 1px solid #2e2e2e;
+    border-radius: 7px;
+    background: none;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .chip-btn:hover { background: #222; }
+  .chip-btn.plus:hover  { border-color: #4ade80; color: #4ade80; }
+  .chip-btn.minus:hover { border-color: #f87171; color: #f87171; }
+  .scoreboard-game-empty {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+    padding: 0.2rem 0;
+  }
 </style>
 </head>
 <body>
@@ -390,6 +567,14 @@
   <p style="text-align:center;color:#aaa;font-size:0.9rem;letter-spacing:0.06em;text-transform:uppercase;font-weight:600;margin-bottom:0.5rem;">Created for THE PACK nights &mdash; 2026</p>
   <p class="site-subtitle">Choose a Category</p>
   <div class="theme-grid" id="theme-grid" role="list"></div>
+
+  <div class="scoreboard-section">
+    <div class="scoreboard-heading">Scoreboard</div>
+    <div class="team-list" id="team-list-home"></div>
+    <div class="scoreboard-actions">
+      <button class="add-team-btn" id="add-team-btn">+ Add Team</button>
+    </div>
+  </div>
 </div>
 
 <!-- QUESTION LIST SCREEN -->
@@ -403,6 +588,10 @@
     <button class="reset-btn" id="reset-btn">Reset All</button>
   </div>
   <div class="question-list" id="question-list" role="list"></div>
+
+  <div class="scoreboard-game">
+    <div class="scoreboard-game-inner" id="team-list-game"></div>
+  </div>
 </div>
 
 <script>
@@ -667,9 +856,124 @@ function escapeHtml(str) {
 }
 
 /* ══════════════════════════════════════════════════
+   TEAM MANAGEMENT
+══════════════════════════════════════════════════ */
+const MAX_TEAMS = 6;
+const STORAGE_KEY = 'triviaTeams';
+
+function loadTeams() {
+  try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveTeams(teams) {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(teams));
+}
+
+function addTeam() {
+  const teams = loadTeams();
+  if (teams.length >= MAX_TEAMS) return;
+  teams.push({ name: '', score: 0 });
+  saveTeams(teams);
+  renderHomeScoreboard();
+  renderGameScoreboard();
+  // focus the new input
+  const inputs = document.querySelectorAll('#team-list-home .team-name-input');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function removeTeam(idx) {
+  const teams = loadTeams();
+  teams.splice(idx, 1);
+  saveTeams(teams);
+  renderHomeScoreboard();
+  renderGameScoreboard();
+}
+
+function updateTeamName(idx, name) {
+  const teams = loadTeams();
+  if (teams[idx] !== undefined) teams[idx].name = name;
+  saveTeams(teams);
+  renderGameScoreboard();
+}
+
+function adjustScore(idx, delta) {
+  const teams = loadTeams();
+  if (teams[idx] !== undefined) {
+    teams[idx].score = Math.max(0, teams[idx].score + delta);
+    saveTeams(teams);
+    renderHomeScoreboard(idx);
+    renderGameScoreboard();
+  }
+}
+
+function renderHomeScoreboard(focusIdx) {
+  const teams = loadTeams();
+  const list = document.getElementById('team-list-home');
+  const addBtn = document.getElementById('add-team-btn');
+  list.innerHTML = '';
+
+  teams.forEach((team, idx) => {
+    const row = document.createElement('div');
+    row.className = 'team-row';
+    row.innerHTML = `
+      <input class="team-name-input" type="text" placeholder="Team ${idx + 1}" maxlength="24"
+             aria-label="Team ${idx + 1} name" value="${escapeAttr(team.name)}">
+      <span class="team-score">${team.score}</span>
+      <button class="score-btn plus"  aria-label="Add point to team ${idx + 1}">+</button>
+      <button class="score-btn minus" aria-label="Subtract point from team ${idx + 1}">&#8722;</button>
+      <button class="remove-btn"      aria-label="Remove team ${idx + 1}">&#10005;</button>
+    `;
+    const input = row.querySelector('.team-name-input');
+    input.addEventListener('input', () => updateTeamName(idx, input.value));
+    row.querySelector('.score-btn.plus').addEventListener('click',  () => adjustScore(idx,  1));
+    row.querySelector('.score-btn.minus').addEventListener('click', () => adjustScore(idx, -1));
+    row.querySelector('.remove-btn').addEventListener('click', () => removeTeam(idx));
+    list.appendChild(row);
+  });
+
+  addBtn.disabled = teams.length >= MAX_TEAMS;
+  addBtn.textContent = teams.length >= MAX_TEAMS ? 'Max 6 teams reached' : '+ Add Team';
+}
+
+function renderGameScoreboard() {
+  const teams = loadTeams();
+  const inner = document.getElementById('team-list-game');
+  inner.innerHTML = '';
+
+  if (teams.length === 0) {
+    inner.innerHTML = '<span class="scoreboard-game-empty">No teams — add teams on the home screen.</span>';
+    return;
+  }
+
+  teams.forEach((team, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'team-chip';
+    const displayName = escapeHtml(team.name.trim() || `Team ${idx + 1}`);
+    chip.innerHTML = `
+      <span class="team-chip-name">${displayName}</span>
+      <span class="team-chip-score">${team.score}</span>
+      <button class="chip-btn minus" aria-label="Subtract point from ${displayName}">&#8722;</button>
+      <button class="chip-btn plus"  aria-label="Add point to ${displayName}">+</button>
+    `;
+    chip.querySelector('.chip-btn.plus').addEventListener('click',  () => adjustScore(idx,  1));
+    chip.querySelector('.chip-btn.minus').addEventListener('click', () => adjustScore(idx, -1));
+    inner.appendChild(chip);
+  });
+}
+
+function escapeAttr(str) {
+  return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
+document.getElementById('add-team-btn').addEventListener('click', addTeam);
+
+/* ══════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════ */
 buildThemeGrid();
+renderHomeScoreboard();
+renderGameScoreboard();
 </script>
 </body>
 </html>
