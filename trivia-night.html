@@ -67,14 +67,15 @@
     text-transform: uppercase;
   }
   .theme-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    display: flex;
+    justify-content: center;
     gap: clamp(1rem, 2.5vw, 1.5rem);
     max-width: 1100px;
     margin: 0 auto;
     width: 100%;
   }
   .theme-card {
+    width: min(360px, 100%);
     background: var(--surface);
     border-radius: var(--radius);
     padding: clamp(1.5rem, 3vw, 2.2rem);
@@ -477,96 +478,6 @@ const THEMES = [
       { q: 'What was the name of Fall Out Boy\'s debut full-length album?', a: 'Take This to Your Grave' },
       { q: 'What band released "Sic Transit Gloria… Glory Fades"?', a: 'Brand New' },
       { q: 'What band released the album Page Avenue?', a: 'Story of the Year' },
-    ]
-  },
-  {
-    id: 'pop',
-    name: 'Pop Culture',
-    icon: '🎬',
-    accent: '#f97316',
-    questions: [
-      { q: 'Which 2009 film features the line "Why so serious?"', a: 'The Dark Knight (2008) — spoken by the Joker (Heath Ledger)' },
-      { q: 'What Netflix series features characters named Eleven, Dustin, and Mike?', a: 'Stranger Things' },
-      { q: 'Which pop star wore a meat dress to the 2010 MTV Video Music Awards?', a: 'Lady Gaga' },
-      { q: 'What iconic meme format asks "Is this a ___?"', a: 'Pigeon (from the anime "The Brave Fighter of Sun Fighbird")' },
-      { q: 'Which film franchise includes "The Deathly Hallows," "The Chamber of Secrets," and "The Goblet of Fire"?', a: 'Harry Potter' },
-      { q: 'Name the TV show where Walter White says "I am the one who knocks."', a: 'Breaking Bad' },
-      { q: 'Which 2013 Disney film features the song "Let It Go"?', a: 'Frozen' },
-      { q: 'What is the name of Tony Stark\'s AI assistant in the Iron Man films?', a: 'JARVIS' },
-      { q: '"Wednesday" on Netflix stars which actress as the titular character?', a: 'Jenna Ortega' },
-      { q: 'What color is the Grimace Shake that went viral on TikTok in 2023?', a: 'Purple' },
-    ]
-  },
-  {
-    id: 'music',
-    name: 'Music History',
-    icon: '🎸',
-    accent: '#22d3ee',
-    questions: [
-      { q: 'Which band is often credited with pioneering the Seattle grunge movement alongside Pearl Jam and Alice in Chains?', a: 'Nirvana' },
-      { q: 'What year did Michael Jackson release "Thriller"?', a: '1982' },
-      { q: 'Who was known as the "King of Rock and Roll"?', a: 'Elvis Presley' },
-      { q: 'Which British band released "Abbey Road" in 1969?', a: 'The Beatles' },
-      { q: 'Name the guitarist who famously played the U.S. national anthem at Woodstock in 1969.', a: 'Jimi Hendrix' },
-      { q: 'What decade did hip-hop first emerge as a genre?', a: '1970s (South Bronx, New York)' },
-      { q: '"Born to Run" is the third studio album by which artist?', a: 'Bruce Springsteen' },
-      { q: 'Which female artist released "Lemonade" as a visual album in 2016?', a: 'Beyoncé' },
-      { q: 'What punk band famously released the album "Never Mind the Bollocks, Here\'s the Sex Pistols" in 1977?', a: 'The Sex Pistols' },
-      { q: 'Which rapper was killed in a drive-by shooting in Las Vegas in September 1996?', a: 'Tupac Shakur' },
-    ]
-  },
-  {
-    id: 'food',
-    name: 'Food & Drink',
-    icon: '🍕',
-    accent: '#4ade80',
-    questions: [
-      { q: 'What Italian cheese is traditionally used on a Margherita pizza?', a: 'Mozzarella' },
-      { q: 'Which country is the original home of the croissant?', a: 'Austria (popularized in France)' },
-      { q: 'What grain is used to make traditional Japanese sake?', a: 'Rice' },
-      { q: 'Scoville units measure the heat of what type of ingredient?', a: 'Chili peppers (capsaicin)' },
-      { q: 'What is the main ingredient in guacamole?', a: 'Avocado' },
-      { q: 'Which cocktail is made with vodka, ginger beer, and lime juice?', a: 'Moscow Mule' },
-      { q: 'What nut is used to make marzipan?', a: 'Almond' },
-      { q: 'Which fast food chain is known for the "Whopper"?', a: 'Burger King' },
-      { q: 'What country does Gouda cheese originally come from?', a: 'Netherlands' },
-      { q: 'Naan bread is most commonly associated with which cuisine?', a: 'Indian' },
-    ]
-  },
-  {
-    id: 'sports',
-    name: 'Sports',
-    icon: '🏆',
-    accent: '#facc15',
-    questions: [
-      { q: 'How many players are on a standard soccer (football) team on the field at one time?', a: '11' },
-      { q: 'What country has won the most FIFA World Cup titles?', a: 'Brazil (5 titles)' },
-      { q: 'In basketball, how many points is a shot worth from beyond the arc?', a: '3 points' },
-      { q: 'Which athlete has won the most Olympic gold medals of all time?', a: 'Michael Phelps (23 gold medals)' },
-      { q: 'What sport is played at Wimbledon?', a: 'Tennis' },
-      { q: 'The Stanley Cup is the championship trophy for which sport?', a: 'Ice Hockey (NHL)' },
-      { q: 'How many holes are played in a standard round of golf?', a: '18' },
-      { q: 'Which boxer was known as "The Greatest" and "The Louisville Lip"?', a: 'Muhammad Ali' },
-      { q: 'In American football, how many points is a touchdown worth?', a: '6 points' },
-      { q: 'What city hosted the first modern Olympic Games in 1896?', a: 'Athens, Greece' },
-    ]
-  },
-  {
-    id: 'science',
-    name: 'Science & Nature',
-    icon: '🔬',
-    accent: '#a78bfa',
-    questions: [
-      { q: 'What is the chemical symbol for gold?', a: 'Au' },
-      { q: 'How many bones are in the adult human body?', a: '206' },
-      { q: 'What planet is known as the Red Planet?', a: 'Mars' },
-      { q: 'What gas do plants absorb from the atmosphere during photosynthesis?', a: 'Carbon dioxide (CO₂)' },
-      { q: 'What is the speed of light in a vacuum (approximately)?', a: '299,792,458 metres per second (~3 × 10⁸ m/s)' },
-      { q: 'What is the powerhouse of the cell?', a: 'The mitochondria' },
-      { q: 'Which scientist developed the theory of general relativity?', a: 'Albert Einstein' },
-      { q: 'What element has atomic number 1?', a: 'Hydrogen (H)' },
-      { q: 'What is the largest organ of the human body?', a: 'The skin' },
-      { q: 'How many chromosomes does a typical human cell contain?', a: '46 (23 pairs)' },
     ]
   }
 ];
