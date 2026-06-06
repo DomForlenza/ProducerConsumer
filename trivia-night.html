@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trivia Night</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a1a1a;
+    --text: #f0f0f0;
+    --muted: #888;
+    --radius: 16px;
+    --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overscroll-behavior: none;
+  }
+
+  /* ── SCREENS ─────────────────────────────────────────── */
+  .screen {
+    position: fixed;
+    inset: 0;
+    overflow-y: auto;
+    padding: clamp(1.5rem, 4vw, 3rem);
+    transition: opacity var(--transition), transform var(--transition);
+  }
+  .screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(24px);
+  }
+  .screen.slide-out {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+
+  /* ── THEME SELECTION ─────────────────────────────────── */
+  #theme-screen {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+  .site-title {
+    text-align: center;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: #fff;
+    margin-bottom: 0.25em;
+    text-shadow: 0 0 40px rgba(255,255,255,0.15);
+  }
+  .site-subtitle {
+    text-align: center;
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    color: var(--muted);
+    margin-bottom: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: clamp(1rem, 2.5vw, 1.5rem);
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .theme-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: clamp(1.5rem, 3vw, 2.2rem);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .theme-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--card-accent, #666);
+    opacity: 0.07;
+    transition: opacity 0.2s ease;
+  }
+  .theme-card:hover::before, .theme-card:focus-visible::before {
+    opacity: 0.14;
+  }
+  .theme-card:hover, .theme-card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    border-color: var(--card-accent, #666);
+    outline: none;
+  }
+  .theme-card:active {
+    transform: translateY(-1px);
+  }
+  .theme-icon {
+    font-size: 2.8rem;
+    margin-bottom: 0.6rem;
+    display: block;
+    line-height: 1;
+  }
+  .theme-name {
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
+    font-weight: 800;
+    color: var(--card-accent, #fff);
+    margin-bottom: 0.3rem;
+    line-height: 1.15;
+  }
+  .theme-count {
+    font-size: 0.95rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .theme-card-arrow {
+    position: absolute;
+    bottom: 1.2rem;
+    right: 1.4rem;
+    font-size: 1.4rem;
+    color: var(--card-accent, #666);
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .theme-card:hover .theme-card-arrow {
+    opacity: 1;
+    transform: translateX(4px);
+  }
+
+  /* ── QUESTION LIST SCREEN ────────────────────────────── */
+  #question-screen {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+  #question-screen.hidden { transform: translateY(24px); }
+
+  .question-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: 0.75rem 0;
+    z-index: 10;
+    border-bottom: 1px solid #222;
+    margin-left: calc(-1 * clamp(1.5rem, 4vw, 3rem));
+    margin-right: calc(-1 * clamp(1.5rem, 4vw, 3rem));
+    padding-left: clamp(1.5rem, 4vw, 3rem);
+    padding-right: clamp(1.5rem, 4vw, 3rem);
+  }
+  .back-btn {
+    background: none;
+    border: 2px solid #333;
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .back-btn:hover {
+    background: #222;
+    border-color: #555;
+  }
+  .header-theme-name {
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+    font-weight: 900;
+    color: var(--active-accent, #fff);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .header-progress {
+    font-size: 0.9rem;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    max-width: 860px;
+    margin: 0 auto;
+    width: 100%;
+    padding-bottom: 3rem;
+  }
+
+  /* ── QUESTION CARD ───────────────────────────────────── */
+  .q-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 2px solid #252525;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+  }
+  .q-card:hover {
+    border-color: #3a3a3a;
+  }
+  .q-card.state-question, .q-card.state-answer {
+    border-color: var(--active-accent, #666);
+    box-shadow: 0 0 0 1px var(--active-accent, #666) inset,
+                0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  .q-card-inner {
+    padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  }
+  .q-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .q-number {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--active-accent, var(--muted));
+    background: rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 0.25rem 0.6rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 0.1em;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .q-card.state-question .q-number,
+  .q-card.state-answer .q-number {
+    background: var(--active-accent, #666);
+    color: #000;
+  }
+
+  .q-hint {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    color: var(--muted);
+    font-style: italic;
+    padding-top: 0.15em;
+    transition: opacity var(--transition);
+  }
+  .q-card.state-question .q-hint,
+  .q-card.state-answer .q-hint {
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  }
+
+  .q-text-wrap {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.35s ease;
+  }
+  .q-card.state-question .q-text-wrap,
+  .q-card.state-answer .q-text-wrap {
+    max-height: 500px;
+    opacity: 1;
+  }
+
+  .q-text {
+    font-size: clamp(1.3rem, 3vw, 1.85rem);
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--text);
+    padding-top: 0.75rem;
+  }
+
+  .q-reveal-btn {
+    display: none;
+    margin-top: 1.1rem;
+    background: var(--active-accent, #555);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    font-weight: 800;
+    padding: 0.65rem 1.4rem;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: filter 0.15s ease, transform 0.15s ease;
+  }
+  .q-reveal-btn:hover { filter: brightness(1.15); transform: scale(1.02); }
+  .q-reveal-btn:active { transform: scale(0.98); }
+  .q-card.state-question .q-reveal-btn { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+  .q-answer-wrap {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.4s ease 0.1s;
+  }
+  .q-card.state-answer .q-answer-wrap {
+    max-height: 500px;
+    opacity: 1;
+  }
+
+  .q-answer-divider {
+    height: 2px;
+    background: var(--active-accent, #555);
+    opacity: 0.4;
+    border-radius: 2px;
+    margin: 1rem 0;
+  }
+  .q-answer-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: var(--active-accent, var(--muted));
+    margin-bottom: 0.4rem;
+  }
+  .q-answer-text {
+    font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+    font-weight: 900;
+    color: var(--active-accent, #fff);
+    line-height: 1.3;
+  }
+
+  /* ── RESET / NEXT CARD HINT ──────────────────────────── */
+  .q-card-footer {
+    display: none;
+    padding: 0 clamp(1.1rem, 2.5vw, 1.6rem) 1rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .q-card.state-answer .q-card-footer { display: block; }
+
+  /* ── SCROLLBAR ───────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+  /* ── FOCUS ───────────────────────────────────────────── */
+  .q-card:focus-visible { outline: 3px solid var(--active-accent, #fff); outline-offset: 2px; }
+
+  /* ── RESET ALL BUTTON ────────────────────────────────── */
+  .reset-bar {
+    max-width: 860px;
+    margin: 0 auto 1.5rem;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .reset-btn {
+    background: none;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .reset-btn:hover { border-color: #555; color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- THEME SELECTION SCREEN -->
+<div id="theme-screen" class="screen" role="main">
+  <h1 class="site-title">Trivia Night</h1>
+  <p class="site-subtitle">Choose a Category</p>
+  <div class="theme-grid" id="theme-grid" role="list"></div>
+</div>
+
+<!-- QUESTION LIST SCREEN -->
+<div id="question-screen" class="screen hidden" role="main" aria-live="polite">
+  <div class="question-header">
+    <button class="back-btn" id="back-btn" aria-label="Back to themes">&#8592; Back</button>
+    <span class="header-theme-name" id="header-theme-name"></span>
+    <span class="header-progress" id="header-progress"></span>
+  </div>
+  <div class="reset-bar">
+    <button class="reset-btn" id="reset-btn">Reset All</button>
+  </div>
+  <div class="question-list" id="question-list" role="list"></div>
+</div>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════
+   TRIVIA DATA
+══════════════════════════════════════════════════ */
+const THEMES = [
+  {
+    id: 'emo',
+    name: 'Emo Night',
+    icon: '🖤',
+    accent: '#d946ef',
+    questions: [
+      { q: 'Which band\'s 2003 album "Three Cheers for Sweet Revenge" is considered an emo cornerstone?', a: 'My Chemical Romance' },
+      { q: 'What Fall Out Boy album contains the hit "Sugar, We\'re Goin Down"?', a: 'From Under the Cork Tree (2005)' },
+      { q: '"The Black Parade" is the third studio album by which band?', a: 'My Chemical Romance' },
+      { q: 'Which band released "Misery Business" in 2007?', a: 'Paramore' },
+      { q: 'Finish the lyric: "I write sins not ___"', a: 'Tragedies — Panic! at the Disco' },
+      { q: 'Which band released the album "From Under the Cork Tree"?', a: 'Fall Out Boy' },
+      { q: '"A Fever You Can\'t Sweat Out" is the debut album of which band?', a: 'Panic! at the Disco' },
+      { q: 'What brand of eye makeup was practically required for emo kids in the mid-2000s?', a: 'Kohl / eyeliner (black eyeliner)' },
+      { q: 'Which Taking Back Sunday album features "Cute Without the \'E\'"?', a: 'Tell All Your Friends (2002)' },
+      { q: 'Name the band behind the anthem "I\'m Not Okay (I Promise)"', a: 'My Chemical Romance' },
+      { q: 'Hawthorne Heights is best known for which 2004 single featuring screamed vocals?', a: '"Ohio Is for Lovers"' },
+      { q: 'Which band — featuring Pete Wentz — released "Infinity on High" in 2007?', a: 'Fall Out Boy' },
+    ]
+  },
+  {
+    id: 'pop',
+    name: 'Pop Culture',
+    icon: '🎬',
+    accent: '#f97316',
+    questions: [
+      { q: 'Which 2009 film features the line "Why so serious?"', a: 'The Dark Knight (2008) — spoken by the Joker (Heath Ledger)' },
+      { q: 'What Netflix series features characters named Eleven, Dustin, and Mike?', a: 'Stranger Things' },
+      { q: 'Which pop star wore a meat dress to the 2010 MTV Video Music Awards?', a: 'Lady Gaga' },
+      { q: 'What iconic meme format asks "Is this a ___?"', a: 'Pigeon (from the anime "The Brave Fighter of Sun Fighbird")' },
+      { q: 'Which film franchise includes "The Deathly Hallows," "The Chamber of Secrets," and "The Goblet of Fire"?', a: 'Harry Potter' },
+      { q: 'Name the TV show where Walter White says "I am the one who knocks."', a: 'Breaking Bad' },
+      { q: 'Which 2013 Disney film features the song "Let It Go"?', a: 'Frozen' },
+      { q: 'What is the name of Tony Stark\'s AI assistant in the Iron Man films?', a: 'JARVIS' },
+      { q: '"Wednesday" on Netflix stars which actress as the titular character?', a: 'Jenna Ortega' },
+      { q: 'What color is the Grimace Shake that went viral on TikTok in 2023?', a: 'Purple' },
+    ]
+  },
+  {
+    id: 'music',
+    name: 'Music History',
+    icon: '🎸',
+    accent: '#22d3ee',
+    questions: [
+      { q: 'Which band is often credited with pioneering the Seattle grunge movement alongside Pearl Jam and Alice in Chains?', a: 'Nirvana' },
+      { q: 'What year did Michael Jackson release "Thriller"?', a: '1982' },
+      { q: 'Who was known as the "King of Rock and Roll"?', a: 'Elvis Presley' },
+      { q: 'Which British band released "Abbey Road" in 1969?', a: 'The Beatles' },
+      { q: 'Name the guitarist who famously played the U.S. national anthem at Woodstock in 1969.', a: 'Jimi Hendrix' },
+      { q: 'What decade did hip-hop first emerge as a genre?', a: '1970s (South Bronx, New York)' },
+      { q: '"Born to Run" is the third studio album by which artist?', a: 'Bruce Springsteen' },
+      { q: 'Which female artist released "Lemonade" as a visual album in 2016?', a: 'Beyoncé' },
+      { q: 'What punk band famously released the album "Never Mind the Bollocks, Here\'s the Sex Pistols" in 1977?', a: 'The Sex Pistols' },
+      { q: 'Which rapper was killed in a drive-by shooting in Las Vegas in September 1996?', a: 'Tupac Shakur' },
+    ]
+  },
+  {
+    id: 'food',
+    name: 'Food & Drink',
+    icon: '🍕',
+    accent: '#4ade80',
+    questions: [
+      { q: 'What Italian cheese is traditionally used on a Margherita pizza?', a: 'Mozzarella' },
+      { q: 'Which country is the original home of the croissant?', a: 'Austria (popularized in France)' },
+      { q: 'What grain is used to make traditional Japanese sake?', a: 'Rice' },
+      { q: 'Scoville units measure the heat of what type of ingredient?', a: 'Chili peppers (capsaicin)' },
+      { q: 'What is the main ingredient in guacamole?', a: 'Avocado' },
+      { q: 'Which cocktail is made with vodka, ginger beer, and lime juice?', a: 'Moscow Mule' },
+      { q: 'What nut is used to make marzipan?', a: 'Almond' },
+      { q: 'Which fast food chain is known for the "Whopper"?', a: 'Burger King' },
+      { q: 'What country does Gouda cheese originally come from?', a: 'Netherlands' },
+      { q: 'Naan bread is most commonly associated with which cuisine?', a: 'Indian' },
+    ]
+  },
+  {
+    id: 'sports',
+    name: 'Sports',
+    icon: '🏆',
+    accent: '#facc15',
+    questions: [
+      { q: 'How many players are on a standard soccer (football) team on the field at one time?', a: '11' },
+      { q: 'What country has won the most FIFA World Cup titles?', a: 'Brazil (5 titles)' },
+      { q: 'In basketball, how many points is a shot worth from beyond the arc?', a: '3 points' },
+      { q: 'Which athlete has won the most Olympic gold medals of all time?', a: 'Michael Phelps (23 gold medals)' },
+      { q: 'What sport is played at Wimbledon?', a: 'Tennis' },
+      { q: 'The Stanley Cup is the championship trophy for which sport?', a: 'Ice Hockey (NHL)' },
+      { q: 'How many holes are played in a standard round of golf?', a: '18' },
+      { q: 'Which boxer was known as "The Greatest" and "The Louisville Lip"?', a: 'Muhammad Ali' },
+      { q: 'In American football, how many points is a touchdown worth?', a: '6 points' },
+      { q: 'What city hosted the first modern Olympic Games in 1896?', a: 'Athens, Greece' },
+    ]
+  },
+  {
+    id: 'science',
+    name: 'Science & Nature',
+    icon: '🔬',
+    accent: '#a78bfa',
+    questions: [
+      { q: 'What is the chemical symbol for gold?', a: 'Au' },
+      { q: 'How many bones are in the adult human body?', a: '206' },
+      { q: 'What planet is known as the Red Planet?', a: 'Mars' },
+      { q: 'What gas do plants absorb from the atmosphere during photosynthesis?', a: 'Carbon dioxide (CO₂)' },
+      { q: 'What is the speed of light in a vacuum (approximately)?', a: '299,792,458 metres per second (~3 × 10⁸ m/s)' },
+      { q: 'What is the powerhouse of the cell?', a: 'The mitochondria' },
+      { q: 'Which scientist developed the theory of general relativity?', a: 'Albert Einstein' },
+      { q: 'What element has atomic number 1?', a: 'Hydrogen (H)' },
+      { q: 'What is the largest organ of the human body?', a: 'The skin' },
+      { q: 'How many chromosomes does a typical human cell contain?', a: '46 (23 pairs)' },
+    ]
+  }
+];
+
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+let activeTheme = null;       // THEMES entry
+let cardStates = [];          // 'unrevealed' | 'question' | 'answer'
+
+/* ══════════════════════════════════════════════════
+   SCREENS
+══════════════════════════════════════════════════ */
+const themeScreen    = document.getElementById('theme-screen');
+const questionScreen = document.getElementById('question-screen');
+const themeGrid      = document.getElementById('theme-grid');
+const questionList   = document.getElementById('question-list');
+const headerName     = document.getElementById('header-theme-name');
+const headerProgress = document.getElementById('header-progress');
+const backBtn        = document.getElementById('back-btn');
+const resetBtn       = document.getElementById('reset-btn');
+
+function showThemeScreen() {
+  questionScreen.classList.add('hidden');
+  themeScreen.classList.remove('hidden');
+  themeScreen.classList.remove('slide-out');
+  document.documentElement.style.setProperty('--active-accent', '#fff');
+  activeTheme = null;
+}
+
+function showQuestionScreen(theme) {
+  activeTheme = theme;
+  cardStates = theme.questions.map(() => 'unrevealed');
+  document.documentElement.style.setProperty('--active-accent', theme.accent);
+  headerName.textContent = theme.name;
+  headerName.style.color = theme.accent;
+  buildQuestionList(theme);
+  updateProgress();
+  themeScreen.classList.add('slide-out');
+  questionScreen.classList.remove('hidden');
+  questionScreen.scrollTop = 0;
+}
+
+/* ══════════════════════════════════════════════════
+   THEME GRID
+══════════════════════════════════════════════════ */
+function buildThemeGrid() {
+  themeGrid.innerHTML = '';
+  THEMES.forEach(theme => {
+    const card = document.createElement('div');
+    card.className = 'theme-card';
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-label', `${theme.name} — ${theme.questions.length} questions`);
+    card.style.setProperty('--card-accent', theme.accent);
+    card.innerHTML = `
+      <span class="theme-icon" aria-hidden="true">${theme.icon}</span>
+      <div class="theme-name">${theme.name}</div>
+      <div class="theme-count">${theme.questions.length} questions</div>
+      <span class="theme-card-arrow" aria-hidden="true">→</span>
+    `;
+    const activate = () => showQuestionScreen(theme);
+    card.addEventListener('click', activate);
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } });
+    themeGrid.appendChild(card);
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   QUESTION LIST
+══════════════════════════════════════════════════ */
+function buildQuestionList(theme) {
+  questionList.innerHTML = '';
+  theme.questions.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('tabindex', '0');
+    card.dataset.idx = idx;
+    card.innerHTML = `
+      <div class="q-card-inner">
+        <div class="q-card-top">
+          <span class="q-number">Q${idx + 1}</span>
+          <span class="q-hint">Tap to reveal question</span>
+        </div>
+        <div class="q-text-wrap">
+          <div class="q-text">${escapeHtml(item.q)}</div>
+          <button class="q-reveal-btn" aria-label="Reveal answer to question ${idx + 1}">
+            Reveal Answer ✦
+          </button>
+          <div class="q-answer-wrap">
+            <div class="q-answer-divider"></div>
+            <div class="q-answer-label">Answer</div>
+            <div class="q-answer-text">${escapeHtml(item.a)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="q-card-footer">Tap again to collapse</div>
+    `;
+
+    // Click on card → advance state (unrevealed → question, answer → unrevealed)
+    card.addEventListener('click', e => {
+      if (e.target.closest('.q-reveal-btn')) return; // handled separately
+      advanceCardState(idx, card);
+    });
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (e.target.closest('.q-reveal-btn')) return;
+        e.preventDefault();
+        advanceCardState(idx, card);
+      }
+    });
+
+    // Reveal answer button
+    const revealBtn = card.querySelector('.q-reveal-btn');
+    revealBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      setCardState(idx, card, 'answer');
+    });
+
+    questionList.appendChild(card);
+    applyCardState(idx, card); // initial state
+  });
+}
+
+function advanceCardState(idx, card) {
+  const current = cardStates[idx];
+  if (current === 'unrevealed') {
+    setCardState(idx, card, 'question');
+  } else if (current === 'question') {
+    setCardState(idx, card, 'answer');
+  } else {
+    setCardState(idx, card, 'unrevealed');
+  }
+}
+
+function setCardState(idx, card, state) {
+  cardStates[idx] = state;
+  applyCardState(idx, card);
+  updateProgress();
+}
+
+function applyCardState(idx, card) {
+  const state = cardStates[idx];
+  card.classList.remove('state-unrevealed', 'state-question', 'state-answer');
+  card.classList.add(`state-${state}`);
+  const hint = card.querySelector('.q-hint');
+  if (state === 'unrevealed') {
+    hint.textContent = 'Tap to reveal question';
+    hint.style.display = '';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+function updateProgress() {
+  if (!activeTheme) return;
+  const revealed = cardStates.filter(s => s === 'answer').length;
+  const total = activeTheme.questions.length;
+  headerProgress.textContent = `${revealed}/${total} answered`;
+}
+
+/* ══════════════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════════════ */
+backBtn.addEventListener('click', showThemeScreen);
+
+resetBtn.addEventListener('click', () => {
+  if (!activeTheme) return;
+  cardStates = activeTheme.questions.map(() => 'unrevealed');
+  const cards = questionList.querySelectorAll('.q-card');
+  cards.forEach((card, idx) => applyCardState(idx, card));
+  updateProgress();
+  questionScreen.scrollTop = 0;
+});
+
+/* ══════════════════════════════════════════════════
+   UTILITY
+══════════════════════════════════════════════════ */
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/* ══════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════ */
+buildThemeGrid();
+</script>
+</body>
+</html>
