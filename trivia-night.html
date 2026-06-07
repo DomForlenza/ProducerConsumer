@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pack Trivia</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a1a1a;
+    --text: #f0f0f0;
+    --muted: #888;
+    --radius: 16px;
+    --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overscroll-behavior: none;
+  }
+
+  /* ── SCREENS ─────────────────────────────────────────── */
+  .screen {
+    position: fixed;
+    inset: 0;
+    overflow-y: auto;
+    padding: clamp(1.5rem, 4vw, 3rem);
+    transition: opacity var(--transition), transform var(--transition);
+  }
+  .screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(24px);
+  }
+  .screen.slide-out {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+
+  /* ── THEME SELECTION ─────────────────────────────────── */
+  #theme-screen {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+  .site-title {
+    text-align: center;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: #fff;
+    margin-bottom: 0.25em;
+    text-shadow: 0 0 40px rgba(255,255,255,0.15);
+  }
+  .site-subtitle {
+    text-align: center;
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    color: var(--muted);
+    margin-bottom: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .theme-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(1rem, 2.5vw, 1.5rem);
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .theme-card {
+    width: min(360px, 100%);
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: clamp(1.5rem, 3vw, 2.2rem);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .theme-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--card-accent, #666);
+    opacity: 0.07;
+    transition: opacity 0.2s ease;
+  }
+  .theme-card:hover::before, .theme-card:focus-visible::before {
+    opacity: 0.14;
+  }
+  .theme-card:hover, .theme-card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    border-color: var(--card-accent, #666);
+    outline: none;
+  }
+  .theme-card:active {
+    transform: translateY(-1px);
+  }
+  .theme-icon {
+    font-size: 2.8rem;
+    margin-bottom: 0.6rem;
+    display: block;
+    line-height: 1;
+  }
+  .theme-name {
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
+    font-weight: 800;
+    color: var(--card-accent, #fff);
+    margin-bottom: 0.3rem;
+    line-height: 1.15;
+  }
+  .theme-count {
+    font-size: 0.95rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .theme-card-arrow {
+    position: absolute;
+    bottom: 1.2rem;
+    right: 1.4rem;
+    font-size: 1.4rem;
+    color: var(--card-accent, #666);
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .theme-card:hover .theme-card-arrow {
+    opacity: 1;
+    transform: translateX(4px);
+  }
+
+  /* ── QUESTION LIST SCREEN ────────────────────────────── */
+  #question-screen {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+  #question-screen.hidden { transform: translateY(24px); }
+
+  .question-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: 0.75rem 0;
+    z-index: 10;
+    border-bottom: 1px solid #222;
+    margin-left: calc(-1 * clamp(1.5rem, 4vw, 3rem));
+    margin-right: calc(-1 * clamp(1.5rem, 4vw, 3rem));
+    padding-left: clamp(1.5rem, 4vw, 3rem);
+    padding-right: clamp(1.5rem, 4vw, 3rem);
+  }
+  .back-btn {
+    background: none;
+    border: 2px solid #333;
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .back-btn:hover {
+    background: #222;
+    border-color: #555;
+  }
+  .header-theme-name {
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+    font-weight: 900;
+    color: var(--active-accent, #fff);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .header-progress {
+    font-size: 0.9rem;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    max-width: 860px;
+    margin: 0 auto;
+    width: 100%;
+    padding-bottom: 3rem;
+  }
+
+  /* ── QUESTION CARD ───────────────────────────────────── */
+  .q-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 2px solid #252525;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+  }
+  .q-card:hover {
+    border-color: #3a3a3a;
+  }
+  .q-card.state-question, .q-card.state-answer {
+    border-color: var(--active-accent, #666);
+    box-shadow: 0 0 0 1px var(--active-accent, #666) inset,
+                0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  .q-card-inner {
+    padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  }
+  .q-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .q-number {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--active-accent, var(--muted));
+    background: rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 0.25rem 0.6rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 0.1em;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .q-card.state-question .q-number,
+  .q-card.state-answer .q-number {
+    background: var(--active-accent, #666);
+    color: #000;
+  }
+
+  .q-hint {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    color: var(--muted);
+    font-style: italic;
+    padding-top: 0.15em;
+    transition: opacity var(--transition);
+  }
+  .q-card.state-question .q-hint,
+  .q-card.state-answer .q-hint {
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  }
+
+  .q-text-wrap {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.35s ease;
+  }
+  .q-card.state-question .q-text-wrap,
+  .q-card.state-answer .q-text-wrap {
+    max-height: 500px;
+    opacity: 1;
+  }
+
+  .q-text {
+    font-size: clamp(1.3rem, 3vw, 1.85rem);
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--text);
+    padding-top: 0.75rem;
+  }
+
+  .q-reveal-btn {
+    display: none;
+    margin-top: 1.1rem;
+    background: var(--active-accent, #555);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    font-weight: 800;
+    padding: 0.65rem 1.4rem;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: filter 0.15s ease, transform 0.15s ease;
+  }
+  .q-reveal-btn:hover { filter: brightness(1.15); transform: scale(1.02); }
+  .q-reveal-btn:active { transform: scale(0.98); }
+  .q-card.state-question .q-reveal-btn { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+  .q-answer-wrap {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.4s ease 0.1s;
+  }
+  .q-card.state-answer .q-answer-wrap {
+    max-height: 500px;
+    opacity: 1;
+  }
+
+  .q-answer-divider {
+    height: 2px;
+    background: var(--active-accent, #555);
+    opacity: 0.4;
+    border-radius: 2px;
+    margin: 1rem 0;
+  }
+  .q-answer-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: var(--active-accent, var(--muted));
+    margin-bottom: 0.4rem;
+  }
+  .q-answer-text {
+    font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+    font-weight: 900;
+    color: var(--active-accent, #fff);
+    line-height: 1.3;
+  }
+
+  /* ── RESET / NEXT CARD HINT ──────────────────────────── */
+  .q-card-footer {
+    display: none;
+    padding: 0 clamp(1.1rem, 2.5vw, 1.6rem) 1rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .q-card.state-answer .q-card-footer { display: block; }
+
+  /* ── SCROLLBAR ───────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+  /* ── FOCUS ───────────────────────────────────────────── */
+  .q-card:focus-visible { outline: 3px solid var(--active-accent, #fff); outline-offset: 2px; }
+
+  /* ── RESET ALL BUTTON ────────────────────────────────── */
+  .reset-bar {
+    max-width: 860px;
+    margin: 0 auto 1.5rem;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .reset-btn {
+    background: none;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .reset-btn:hover { border-color: #555; color: var(--text); }
+
+  /* ── SCOREBOARD (HOME) ───────────────────────────── */
+  .scoreboard-section {
+    max-width: min(480px, 100%);
+    margin: 2.5rem auto 0;
+    width: 100%;
+  }
+  .scoreboard-heading {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.9rem;
+    text-align: center;
+  }
+  .team-list { display: flex; flex-direction: column; gap: 0.55rem; }
+  .team-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface);
+    border: 1px solid #252525;
+    border-radius: 12px;
+    padding: 0.55rem 0.75rem;
+  }
+  .team-name-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid transparent;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 0.15rem 0.25rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .team-name-input:focus { border-bottom-color: var(--team-color, #d946ef); }
+  .team-name-input::placeholder { color: #444; }
+  .team-score {
+    font-size: 1.45rem;
+    font-weight: 900;
+    min-width: 2.2rem;
+    text-align: center;
+    color: var(--team-color, #d946ef);
+    letter-spacing: -0.5px;
+  }
+  .score-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #333;
+    border-radius: 9px;
+    background: none;
+    color: var(--text);
+    font-size: 1.15rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.13s, border-color 0.13s, color 0.13s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .score-btn:hover { background: #222; }
+  .score-btn.plus:hover  { border-color: #4ade80; color: #4ade80; }
+  .score-btn.minus:hover { border-color: #f87171; color: #f87171; }
+  .remove-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: none;
+    color: #3a3a3a;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: color 0.13s, background 0.13s;
+    flex-shrink: 0;
+  }
+  .remove-btn:hover { color: #f87171; background: rgba(248,113,113,0.1); }
+  .scoreboard-actions { margin-top: 0.7rem; }
+  .add-team-btn {
+    width: 100%;
+    background: none;
+    border: 1px dashed #333;
+    border-radius: 10px;
+    color: #555;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .add-team-btn:hover:not(:disabled) { border-color: #666; color: var(--muted); }
+  .add-team-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+  /* ── SCOREBOARD (GAME — sticky bottom bar) ───────── */
+  .scoreboard-game {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    border-top: 1px solid #1e1e1e;
+    margin-top: 2rem;
+    margin-left:  calc(-1 * clamp(1.5rem, 4vw, 3rem));
+    margin-right: calc(-1 * clamp(1.5rem, 4vw, 3rem));
+    padding: 0.65rem clamp(1.5rem, 4vw, 3rem);
+    z-index: 9;
+  }
+  .scoreboard-game-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: stretch;
+  }
+  .team-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--surface);
+    border: 1px solid #252525;
+    border-radius: 10px;
+    padding: 0.3rem 0.45rem 0.3rem 0.7rem;
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+  .team-chip-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .team-chip-score {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--team-color, #d946ef);
+    min-width: 1.6rem;
+    text-align: center;
+  }
+  .chip-btn {
+    width: 26px;
+    height: 26px;
+    border: 1px solid #2e2e2e;
+    border-radius: 7px;
+    background: none;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .chip-btn:hover { background: #222; }
+  .chip-btn.plus:hover  { border-color: #4ade80; color: #4ade80; }
+  .chip-btn.minus:hover { border-color: #f87171; color: #f87171; }
+  .scoreboard-game-empty {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+    padding: 0.2rem 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- THEME SELECTION SCREEN -->
+<div id="theme-screen" class="screen" role="main">
+  <h1 class="site-title">Pack Trivia</h1>
+  <p style="text-align:center;color:#aaa;font-size:0.9rem;letter-spacing:0.06em;text-transform:uppercase;font-weight:600;margin-bottom:0.5rem;">Created for THE PACK nights &mdash; 2026</p>
+  <p class="site-subtitle">Choose a Category</p>
+  <div class="theme-grid" id="theme-grid" role="list"></div>
+
+  <div class="scoreboard-section">
+    <div class="scoreboard-heading">Scoreboard</div>
+    <div class="team-list" id="team-list-home"></div>
+    <div class="scoreboard-actions">
+      <button class="add-team-btn" id="add-team-btn">+ Add Team</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUESTION LIST SCREEN -->
+<div id="question-screen" class="screen hidden" role="main" aria-live="polite">
+  <div class="question-header">
+    <button class="back-btn" id="back-btn" aria-label="Back to themes">&#8592; Back</button>
+    <span class="header-theme-name" id="header-theme-name"></span>
+    <span class="header-progress" id="header-progress"></span>
+  </div>
+  <div class="reset-bar">
+    <button class="reset-btn" id="reset-btn">Reset All</button>
+  </div>
+  <div class="question-list" id="question-list" role="list"></div>
+
+  <div class="scoreboard-game">
+    <div class="scoreboard-game-inner" id="team-list-game"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════
+   TRIVIA DATA
+══════════════════════════════════════════════════ */
+const THEMES = [
+  {
+    id: 'emo',
+    name: 'Emo Night',
+    icon: '🖤',
+    accent: '#d946ef',
+    questions: [
+      // Round 1: Welcome to the Black Parade
+      { q: 'My Chemical Romance released an iconic concept album about a character called "The Patient" dying of cancer. What is this album called?', a: 'The Black Parade (2006)' },
+      { q: 'Fall Out Boy\'s hit "Sugar, We\'re Goin Down" appeared on which 2005 album?', a: 'From Under the Cork Tree' },
+      { q: 'Pete Wentz co-wrote the lyrics for which Panic! At The Disco debut album?', a: 'A Fever You Can\'t Sweat Out (2005)' },
+      { q: 'Which band is fronted by Gerard Way, who later went on to write the comic series "The Umbrella Academy"?', a: 'My Chemical Romance' },
+      { q: 'Pete Wentz is the bassist and lyricist for which early-2000s emo/pop-punk band?', a: 'Fall Out Boy' },
+      { q: 'Complete the My Chemical Romance 2004 song title: "I\'m Not Okay, ______"', a: 'I Promise — full title: "I\'m Not Okay (I Promise)"' },
+      { q: 'Which band released "The Middle" in 2001, a song about telling someone it\'s gonna be alright?', a: 'Jimmy Eat World' },
+      { q: 'Which Paramore song had a chorus that went "That\'s what you get when you let your heart win"?', a: 'That\'s What You Get' },
+      { q: 'Which band released both "Take This to Your Grave" and "From Under the Cork Tree"?', a: 'Fall Out Boy' },
+      { q: 'Dashboard Confessional sang which 2003 emotional anthem that begins "Breathe in for luck"?', a: 'Hands Down' },
+      // Round 2: Screaming Into the Void
+      { q: 'Hawthorne Heights sang about cutting "my wrists and black my eyes" in which 2004 single?', a: 'Ohio Is for Lovers' },
+      { q: 'Taking Back Sunday released their debut album in 2002. Name it.', a: 'Tell All Your Friends' },
+      { q: 'Which Brand New album, credited with defining the era\'s emotional depth, was named after a French phrase meaning "already heard"?', a: 'Deja Entendu' },
+      { q: 'Which Underoath album featured the track "It\'s Dangerous Business Walking Out Your Front Door"?', a: 'They\'re Only Chasing Safety' },
+      { q: 'What genre term was applied to bands like Underoath, Senses Fail, and Silverstein that blended hardcore and emo?', a: 'Screamo (or post-hardcore)' },
+      { q: 'What is the name of Thursday\'s debut full-length album, considered a landmark of post-hardcore?', a: 'Full Collapse' },
+      { q: 'Senses Fail featured the track "Lady in a Blue Dress" on which debut album?', a: 'Let It Enfold You' },
+      { q: 'The Used is fronted by which charismatic frontman known for his raw vocal delivery?', a: 'Bert McCracken' },
+      { q: 'Avril Lavigne\'s debut album had a massive emo/punk-adjacent sound. What was it called?', a: 'Let Go' },
+      { q: 'Jimmy Eat World\'s album "Bleed American" was re-released under a different title after 9/11. What was the new title?', a: 'Jimmy Eat World (self-titled)' },
+      // Round 3: Scene Kids & Side Bangs
+      { q: 'The hairstyle that swept across one eye was a signature look of the scene/emo subculture. What was it called?', a: 'Side-swept or swoop bangs (emo bangs)' },
+      { q: 'Which website became the social media hub for emo and scene kids to share music, photos, and connect with bands?', a: 'MySpace' },
+      { q: 'Scene emo was often associated with neon-colored hair and a specific animal drawn in kawaii style that became a scene symbol. Which animal?', a: 'Dinosaurs (or bats, owls — accept any common scene animal)' },
+      { q: 'Which mall store was infamous for emo-coded band tees, studded belts, and wallet chains?', a: 'Hot Topic (or brands like Tripp NYC)' },
+      { q: 'Studded belt straps were a fashion staple. What other belt accessory worn diagonally across the body was popular in emo fashion?', a: 'Bullet belt (or studded messenger strap)' },
+      { q: 'Which music publication covered the emo subculture throughout the 2000s and featured iconic band photo spreads?', a: 'Alternative Press (AP Magazine)' },
+      { q: 'The Alternative Press Music Awards (APMAs) are held annually. In what Ohio city?', a: 'Cleveland' },
+      { q: 'Warped Tour was the major summer festival for emo and punk fans. What shoe brand sponsored it?', a: 'Vans' },
+      { q: 'What dismissive term was applied to someone considered to be faking their involvement in emo culture?', a: 'Poser (or "fake emo")' },
+      { q: 'Large-framed glasses — whether prescription or not — were a signature emo accessory. What were they commonly called?', a: 'Emo/hipster glasses or "nerd glasses"' },
+      // Round 4: From First to Last
+      { q: 'Sonny Moore left From First to Last in 2007 to pursue a solo career. He became globally famous under a different name. Who is he?', a: 'Sonny Moore, known as Skrillex' },
+      { q: 'From First to Last\'s debut EP was raw deathcore. What was it called?', a: 'This Is What the Edge of Your Seat Was Made For' },
+      { q: 'Coheed and Cambria\'s albums tell a continuous sci-fi story. What is the name of their fictional universe?', a: 'The Amory Wars' },
+      { q: 'Chiodos, Alesana, and similar bands are associated with which emo/post-hardcore sub-genre known for theatrical stage presentation?', a: 'Melodic post-hardcore / theatrical post-hardcore' },
+      { q: 'Pete Wentz founded a record label in 2005 that signed bands like Cobra Starship and Gym Class Heroes. What was it called?', a: 'Decaydance Records (Fueled by Ramen imprint)' },
+      { q: 'Saosin featured a beloved track about pain and longing. What is it called?', a: 'Smile in Your Sleep' },
+      { q: 'Name a Canadian emo or post-hardcore band prominent in the Toronto scene between 2007 and 2009.', a: 'Alexisonfire, Billy Talent, or Silverstein (accept reasonable answers)' },
+      { q: 'Escape the Fate\'s original vocalist — who fronted the band before Craig Mabbitt joined and was later incarcerated — was who?', a: 'Ronnie Radke' },
+      { q: 'William Beckett led which Chicago post-hardcore/emo band known for elaborate live performances?', a: 'The Academy Is...' },
+      { q: 'Which Bright Eyes album tells the story of a narrator who has died and watches his loved ones grieve?', a: 'What to Do When You Are Dead' },
+      // Round 5: The Final Song
+      { q: 'Complete the lyric: "I\'m a ______ dealer / Fitting you with weapons in the form of words" — from which Fall Out Boy song?', a: 'Words — from "Thnks fr th Mmrs"' },
+      { q: 'The MCR music video for "Helena" depicted a funeral scene. Who was "Helena" written about?', a: 'Gerard Way\'s grandmother, Elena' },
+      { q: 'Chris Carrabba originally released music under a different band name before Dashboard Confessional. What was that band?', a: 'Further Seems Forever' },
+      { q: 'Paramore is from which US state, often associated with the band\'s small-town origins?', a: 'Tennessee (Franklin, TN)' },
+      { q: 'My Chemical Romance and The Used collaborated on a charity single in 2004. What was it called?', a: 'Under Pressure (a cover of the Queen/Bowie song)' },
+      { q: 'Which band released "We Live" in 2003 and is credited as a bridge between metal and the emo explosion?', a: 'From Autumn to Ashes' },
+      { q: 'Silverstein, Story of the Year, and Finch are all from which decade\'s "second wave" of emo?', a: '2000s (early-to-mid 2000s emo wave)' },
+      { q: 'What was the name of the music website and forum community — a precursor to Reddit — where scene kids discussed shows and discovered new bands?', a: 'AbsolutePunk.net (or PureVolume)' },
+      { q: 'Which band, known for "Three Cheers for Sweet Revenge" and "The Black Parade", announced their breakup in 2013?', a: 'My Chemical Romance' },
+      { q: 'My Chemical Romance broke up in 2013 but made a surprise reunion announcement in 2019 with a Halloween show. In which city was this held?', a: 'Los Angeles (Shrine Auditorium, October 31, 2019)' },
+    ]
+  },
+  {
+    id: 'pop',
+    name: 'Modern Pop Culture',
+    icon: '🎬',
+    accent: '#f97316',
+    questions: [
+      { q: 'What 2023 film became the highest-grossing movie directed solely by a woman?', a: 'Barbie' },
+      { q: 'Which artist released the albums Folklore, Evermore, and Midnights?', a: 'Taylor Swift' },
+      { q: 'In Stranger Things, what song helped Max escape Vecna in Season 4?', a: '"Running Up That Hill" by Kate Bush' },
+      { q: 'Which actor plays Joel in HBO\'s The Last of Us?', a: 'Pedro Pascal' },
+      { q: 'What social media app is known for short-form vertical videos and launched internationally in 2017?', a: 'TikTok' },
+      { q: 'Which NFL player is nicknamed "Kelce" and dated Taylor Swift?', a: 'Travis Kelce' },
+      { q: 'What movie won the Academy Award for Best Picture in 2024?', a: 'Oppenheimer' },
+      { q: 'Which singer headlined the 2023 Super Bowl halftime show while pregnant?', a: 'Rihanna' },
+      { q: 'In the Marvel Cinematic Universe, what is Wanda Maximoff\'s superhero name?', a: 'Scarlet Witch' },
+      { q: 'What HBO series follows the Roy family and the battle for control of Waystar Royco?', a: 'Succession' },
+      { q: 'Which rapper released the 2022 album Her Loss with 21 Savage?', a: 'Drake' },
+      { q: 'What is the name of Wednesday Addams\' roommate in Netflix\'s Wednesday?', a: 'Enid Sinclair' },
+      { q: 'Which actor portrayed Elvis Presley in the 2022 biopic Elvis?', a: 'Austin Butler' },
+      { q: 'What streaming platform produced The Mandalorian?', a: 'Disney+' },
+      { q: 'Which celebrity founded the beauty brand Fenty Beauty?', a: 'Rihanna' },
+      { q: 'In The Bear, what is the main character Carmy\'s profession?', a: 'Chef' },
+      { q: 'Which video game franchise features characters named Master Chief and Cortana?', a: 'Halo' },
+      { q: 'What artist sang "Flowers," one of the biggest hits of 2023?', a: 'Miley Cyrus' },
+      { q: 'Which actor plays Ken in Barbie?', a: 'Ryan Gosling' },
+      { q: 'What does the "S" stand for in K-pop group BTS?', a: 'Scouts' },
+      { q: 'Which reality competition series features judges Simon Cowell, Heidi Klum, and Howie Mandel?', a: 'America\'s Got Talent' },
+      { q: 'What is the fictional African nation in Black Panther?', a: 'Wakanda' },
+      { q: 'Which artist released the album SOS in late 2022?', a: 'SZA' },
+      { q: 'What phrase is used in The Hunger Games before the games begin?', a: '"May the odds be ever in your favor."' },
+      { q: 'Which actor voices Rocket Raccoon in the MCU?', a: 'Bradley Cooper' },
+      { q: 'What Netflix true crime series focused on Jeffrey Dahmer in 2022?', a: 'Monster: The Jeffrey Dahmer Story' },
+      { q: 'Which pop star\'s fans are nicknamed "Little Monsters"?', a: 'Lady Gaga' },
+      { q: 'What is the name of the coffee shop in Friends?', a: 'Central Perk' },
+      { q: 'Which singer released the album GUTS in 2023?', a: 'Olivia Rodrigo' },
+      { q: 'In Spider-Man: No Way Home, which villain says "Hello, Peter"?', a: 'Doctor Octopus' },
+      { q: 'Which actor starred as Maverick in Top Gun: Maverick?', a: 'Tom Cruise' },
+      { q: 'What is the name of the island in Jurassic Park?', a: 'Isla Nublar' },
+      { q: 'Which YouTuber-turned-boxer fought Tommy Fury in 2023?', a: 'Jake Paul' },
+      { q: 'What singer performed "Anti-Hero"?', a: 'Taylor Swift' },
+      { q: 'Which actress plays Rue in Euphoria?', a: 'Zendaya' },
+      { q: 'What is the subtitle of the second Dune film released in 2024?', a: 'Dune: Part Two' },
+      { q: 'Which video game company makes the PlayStation console?', a: 'Sony' },
+      { q: 'In The Office, what company does the Scranton branch work for?', a: 'Dunder Mifflin' },
+      { q: 'Which artist collaborated with Post Malone on "Sunflower"?', a: 'Swae Lee' },
+      { q: 'What is Baby Yoda\'s actual name in The Mandalorian?', a: 'Grogu' },
+      { q: 'Which actress starred in Anyone But You and Euphoria?', a: 'Sydney Sweeney' },
+      { q: 'What streaming service is known for shows like The Boys and Reacher?', a: 'Prime Video' },
+      { q: 'Which actor plays Loki in the Marvel Cinematic Universe?', a: 'Tom Hiddleston' },
+      { q: 'What does "RIZZ" generally mean in slang?', a: 'Charm or flirting ability' },
+      { q: 'Which artist released the hit song "Espresso" in 2024?', a: 'Sabrina Carpenter' },
+      { q: 'What movie features the quote "I volunteer as tribute"?', a: 'The Hunger Games' },
+      { q: 'Which celebrity chef hosts Hell\'s Kitchen?', a: 'Gordon Ramsay' },
+      { q: 'What is the highest-grossing film of all time worldwide, not adjusted for inflation?', a: 'Avatar' },
+      { q: 'Which actor played both Thanos and Cable in Marvel films?', a: 'Josh Brolin' },
+      { q: 'What HBO drama featured dragons, the Targaryens, and the Iron Throne?', a: 'Game of Thrones' },
+    ]
+  },
+  {
+    id: 'sports',
+    name: 'Sports',
+    icon: '🏆',
+    accent: '#4ade80',
+    questions: [
+      { q: 'Which NFL quarterback was nicknamed "Mr. Irrelevant" before eventually leading the 49ers to the Super Bowl?', a: 'Brock Purdy' },
+      { q: 'What NBA player won Finals MVP in 2023 despite never being drafted into the McDonald\'s All-American Game?', a: 'Nikola Jokić' },
+      { q: 'Which NHL franchise was originally known as the Atlanta Thrashers?', a: 'Winnipeg Jets' },
+      { q: 'Which country did Morocco defeat to become the first African nation to reach a World Cup semifinal?', a: 'Portugal' },
+      { q: 'What college did Josh Allen attend before entering the NFL?', a: 'Wyoming' },
+      { q: 'Which NBA team blew a 3–1 lead to the Denver Nuggets in the 2020 playoffs?', a: 'Los Angeles Clippers' },
+      { q: 'Which NHL player won the Conn Smythe Trophy in 2024?', a: 'Aleksander Barkov' },
+      { q: 'Which soccer club won the 2023 UEFA Champions League?', a: 'Manchester City' },
+      { q: 'What NFL team drafted Lamar Jackson?', a: 'Baltimore Ravens' },
+      { q: 'Which NBA player scored 71 points in a game during the 2022–23 season?', a: 'Donovan Mitchell' },
+      { q: 'What NHL team ended Canada\'s Stanley Cup drought in 1993 by defeating the Kings?', a: 'Montreal Canadiens' },
+      { q: 'Which country hosted the 2016 Copa América Centenario?', a: 'United States' },
+      { q: 'Which NBA franchise originally drafted Dirk Nowitzki before trading him on draft night?', a: 'Milwaukee Bucks' },
+      { q: 'What NHL award is given to the league\'s top defenseman?', a: 'Norris Trophy' },
+      { q: 'Which soccer player famously headbutted Marco Materazzi in the 2006 World Cup Final?', a: 'Zinedine Zidane' },
+      { q: 'Which NFL coach was fired by the Eagles one season before they won Super Bowl LII?', a: 'Chip Kelly' },
+      { q: 'Which NBA team retired both numbers 8 and 24 for the same player?', a: 'Los Angeles Lakers' },
+      { q: 'Which NHL team did Wayne Gretzky play for immediately before joining the Rangers?', a: 'Los Angeles Kings' },
+      { q: 'Which country won the first-ever UEFA Nations League?', a: 'Portugal' },
+      { q: 'What receiver made the "Minneapolis Miracle" catch for the Vikings?', a: 'Stefon Diggs' },
+      { q: 'Which NBA player won Defensive Player of the Year three times while playing for the Magic?', a: 'Dwight Howard' },
+      { q: 'Which NHL player scored the "Golden Goal" for Canada in the 2010 Olympics?', a: 'Sidney Crosby' },
+      { q: 'Which soccer club\'s supporters are known as the "Kop"?', a: 'Liverpool' },
+      { q: 'What NFL team lost four consecutive Super Bowls in the 1990s?', a: 'Buffalo Bills' },
+      { q: 'Which NBA player was nicknamed "The Beard"?', a: 'James Harden' },
+      { q: 'Which NHL team won the Stanley Cup immediately after relocating from Quebec?', a: 'Colorado Avalanche' },
+      { q: 'Which nation eliminated the United States from the 2022 FIFA World Cup?', a: 'Netherlands' },
+      { q: 'Which NBA player famously said, "Anything is possible!" after winning the 2008 Finals?', a: 'Kevin Garnett' },
+      { q: 'Which NHL franchise has the longest Stanley Cup drought?', a: 'Toronto Maple Leafs' },
+      { q: 'Which soccer manager led Argentina to the 2022 World Cup title?', a: 'Lionel Scaloni' },
+      { q: 'Which NFL team originally drafted Brett Favre?', a: 'Atlanta Falcons' },
+      { q: 'Which NBA team did Kawhi Leonard win his first championship with?', a: 'San Antonio Spurs' },
+      { q: 'What NHL trophy is awarded to the regular season MVP?', a: 'Hart Trophy' },
+      { q: 'Which soccer player scored the infamous "Hand of God" goal?', a: 'Diego Maradona' },
+      { q: 'Which NFL player returned the opening kickoff for a touchdown in Super Bowl XLI?', a: 'Devin Hester' },
+      { q: 'Which NBA player was known as "The Round Mound of Rebound"?', a: 'Charles Barkley' },
+      { q: 'Which NHL team did Jaromír Jágr win his Stanley Cups with?', a: 'Pittsburgh Penguins' },
+      { q: 'Which club did Cristiano Ronaldo join after leaving Manchester United in 2022?', a: 'Al Nassr' },
+      { q: 'Which NFL quarterback caught a touchdown pass in the "Philly Special"?', a: 'Nick Foles' },
+      { q: 'Which NBA player holds the record for most career triple-doubles?', a: 'Russell Westbrook' },
+      { q: 'Which NHL goalie won the Conn Smythe Trophy despite losing the Stanley Cup Final in 2003?', a: 'Jean-Sébastien Giguère' },
+      { q: 'Which country did Spain defeat to win the 2010 FIFA World Cup?', a: 'Netherlands' },
+      { q: 'Which NFL stadium is nicknamed "The Frozen Tundra"?', a: 'Lambeau Field' },
+      { q: 'Which NBA player was drafted ahead of Luka Dončić in 2018?', a: 'Deandre Ayton and Marvin Bagley III' },
+      { q: 'Which NHL player captained the Capitals to their first Stanley Cup?', a: 'Alex Ovechkin' },
+      { q: 'Which soccer club won the treble in 1999 with a dramatic Champions League comeback?', a: 'Manchester United' },
+      { q: 'Which NFL defensive player was nicknamed "Mean Joe"?', a: 'Joe Greene' },
+      { q: 'Which NBA franchise has never appeared in an NBA Finals?', a: 'Charlotte Hornets (among others)' },
+    ]
+  },
+  {
+    id: 'science',
+    name: 'Science',
+    icon: '🔬',
+    accent: '#22d3ee',
+    questions: [
+      { q: 'What is the only element that is a liquid at room temperature and is also a metal?', a: 'Mercury' },
+      { q: 'How many bones are in the adult human body?', a: '206' },
+      { q: 'What is the chemical symbol for gold?', a: 'Au' },
+      { q: 'What planet has the most moons in our solar system?', a: 'Saturn (146 confirmed moons)' },
+      { q: 'What is the speed of light in a vacuum, approximately?', a: '299,792,458 m/s (approx. 3×10⁸ m/s)' },
+      { q: 'What gas do plants absorb during photosynthesis?', a: 'Carbon dioxide (CO₂)' },
+      { q: 'What is the powerhouse of the cell?', a: 'The mitochondria' },
+      { q: 'What is the most abundant gas in Earth\'s atmosphere?', a: 'Nitrogen (about 78%)' },
+      { q: 'What particle has a negative charge and orbits the nucleus of an atom?', a: 'Electron' },
+      { q: 'What is the SI unit of electric current?', a: 'Ampere (Amp)' },
+      { q: 'Which element has the atomic number 1?', a: 'Hydrogen' },
+      { q: 'What organ produces insulin in the human body?', a: 'The pancreas' },
+      { q: 'What is the name of the process by which rocks are broken down by weather and environment?', a: 'Weathering' },
+      { q: 'What type of bond involves the sharing of electrons between atoms?', a: 'Covalent bond' },
+      { q: 'What is the hardest natural substance on Earth?', a: 'Diamond' },
+      { q: 'In which layer of Earth\'s atmosphere does weather occur?', a: 'The troposphere' },
+      { q: 'What is the name of the force that opposes motion between two surfaces in contact?', a: 'Friction' },
+      { q: 'What is the half-life of Carbon-14?', a: 'Approximately 5,730 years' },
+      { q: 'What is the term for animals that eat both plants and meat?', a: 'Omnivores' },
+      { q: 'What phenomenon causes the sky to appear blue?', a: 'Rayleigh scattering' },
+      { q: 'What is the chemical formula for water?', a: 'H₂O' },
+      { q: 'What law states that for every action, there is an equal and opposite reaction?', a: 'Newton\'s Third Law of Motion' },
+      { q: 'What is the name of the longest bone in the human body?', a: 'The femur (thigh bone)' },
+      { q: 'What type of electromagnetic radiation has the shortest wavelength?', a: 'Gamma rays' },
+      { q: 'What is the process by which a liquid turns into a gas at its boiling point?', a: 'Vaporization (boiling/evaporation)' },
+      { q: 'What is the study of fungi called?', a: 'Mycology' },
+      { q: 'What planet is known as the Red Planet?', a: 'Mars' },
+      { q: 'What is the unit of measurement for frequency?', a: 'Hertz (Hz)' },
+      { q: 'What protein carries oxygen in red blood cells?', a: 'Hemoglobin' },
+      { q: 'What is the chemical symbol for sodium?', a: 'Na' },
+      { q: 'What is the name of the process where DNA is copied into RNA?', a: 'Transcription' },
+      { q: 'What force keeps planets in orbit around the Sun?', a: 'Gravity' },
+      { q: 'What is absolute zero in Celsius?', a: '-273.15°C' },
+      { q: 'How many chromosomes do healthy humans typically have?', a: '46 (23 pairs)' },
+      { q: 'What is the term for the bending of light as it passes from one medium to another?', a: 'Refraction' },
+      { q: 'What organ filters blood and produces urine?', a: 'The kidneys' },
+      { q: 'What is the name of the closest star to Earth (other than the Sun)?', a: 'Proxima Centauri' },
+      { q: 'What is the pH of a neutral solution at 25°C?', a: '7' },
+      { q: 'What branch of science studies the Earth\'s physical structure and history?', a: 'Geology' },
+      { q: 'What is the name of the subatomic particle with no electric charge?', a: 'Neutron' },
+      { q: 'What type of rock is formed from cooled magma?', a: 'Igneous rock' },
+      { q: 'What is the term for a substance that speeds up a chemical reaction without being consumed?', a: 'Catalyst' },
+      { q: 'How many chambers does the human heart have?', a: 'Four' },
+      { q: 'What is the name of the galaxy that contains our solar system?', a: 'The Milky Way' },
+      { q: 'What is the chemical symbol for iron?', a: 'Fe' },
+      { q: 'What part of a plant conducts water from roots to leaves?', a: 'The xylem' },
+      { q: 'What is the term for the minimum energy needed to start a chemical reaction?', a: 'Activation energy' },
+      { q: 'What scientist developed the theory of general relativity?', a: 'Albert Einstein' },
+      { q: 'What is the most common blood type in humans worldwide?', a: 'O positive (O+)' },
+      { q: 'What phenomenon occurs when a solid turns directly into a gas without becoming a liquid?', a: 'Sublimation' },
+    ]
+  }
+];
+
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+let activeTheme = null;       // THEMES entry
+let cardStates = [];          // 'unrevealed' | 'question' | 'answer'
+
+/* ══════════════════════════════════════════════════
+   SCREENS
+══════════════════════════════════════════════════ */
+const themeScreen    = document.getElementById('theme-screen');
+const questionScreen = document.getElementById('question-screen');
+const themeGrid      = document.getElementById('theme-grid');
+const questionList   = document.getElementById('question-list');
+const headerName     = document.getElementById('header-theme-name');
+const headerProgress = document.getElementById('header-progress');
+const backBtn        = document.getElementById('back-btn');
+const resetBtn       = document.getElementById('reset-btn');
+
+function showThemeScreen() {
+  questionScreen.classList.add('hidden');
+  themeScreen.classList.remove('hidden');
+  themeScreen.classList.remove('slide-out');
+  document.documentElement.style.setProperty('--active-accent', '#fff');
+  activeTheme = null;
+}
+
+function showQuestionScreen(theme) {
+  activeTheme = theme;
+  cardStates = theme.questions.map(() => 'unrevealed');
+  document.documentElement.style.setProperty('--active-accent', theme.accent);
+  headerName.textContent = theme.name;
+  headerName.style.color = theme.accent;
+  buildQuestionList(theme);
+  updateProgress();
+  themeScreen.classList.add('slide-out');
+  questionScreen.classList.remove('hidden');
+  questionScreen.scrollTop = 0;
+}
+
+/* ══════════════════════════════════════════════════
+   THEME GRID
+══════════════════════════════════════════════════ */
+function buildThemeGrid() {
+  themeGrid.innerHTML = '';
+  THEMES.forEach(theme => {
+    const card = document.createElement('div');
+    card.className = 'theme-card';
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-label', `${theme.name} — ${theme.questions.length} questions`);
+    card.style.setProperty('--card-accent', theme.accent);
+    card.innerHTML = `
+      <span class="theme-icon" aria-hidden="true">${theme.icon}</span>
+      <div class="theme-name">${theme.name}</div>
+      <div class="theme-count">${theme.questions.length} questions</div>
+      <span class="theme-card-arrow" aria-hidden="true">→</span>
+    `;
+    const activate = () => showQuestionScreen(theme);
+    card.addEventListener('click', activate);
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } });
+    themeGrid.appendChild(card);
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   QUESTION LIST
+══════════════════════════════════════════════════ */
+function buildQuestionList(theme) {
+  questionList.innerHTML = '';
+  theme.questions.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('tabindex', '0');
+    card.dataset.idx = idx;
+    card.innerHTML = `
+      <div class="q-card-inner">
+        <div class="q-card-top">
+          <span class="q-number">Q${idx + 1}</span>
+          <span class="q-hint">Tap to reveal question</span>
+        </div>
+        <div class="q-text-wrap">
+          <div class="q-text">${escapeHtml(item.q)}</div>
+          <button class="q-reveal-btn" aria-label="Reveal answer to question ${idx + 1}">
+            Reveal Answer ✦
+          </button>
+          <div class="q-answer-wrap">
+            <div class="q-answer-divider"></div>
+            <div class="q-answer-label">Answer</div>
+            <div class="q-answer-text">${escapeHtml(item.a)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="q-card-footer">Tap again to collapse</div>
+    `;
+
+    // Click on card → advance state (unrevealed → question, answer → unrevealed)
+    card.addEventListener('click', e => {
+      if (e.target.closest('.q-reveal-btn')) return; // handled separately
+      advanceCardState(idx, card);
+    });
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (e.target.closest('.q-reveal-btn')) return;
+        e.preventDefault();
+        advanceCardState(idx, card);
+      }
+    });
+
+    // Reveal answer button
+    const revealBtn = card.querySelector('.q-reveal-btn');
+    revealBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      setCardState(idx, card, 'answer');
+    });
+
+    questionList.appendChild(card);
+    applyCardState(idx, card); // initial state
+  });
+}
+
+function advanceCardState(idx, card) {
+  const current = cardStates[idx];
+  if (current === 'unrevealed') {
+    setCardState(idx, card, 'question');
+  } else if (current === 'question') {
+    setCardState(idx, card, 'answer');
+  } else {
+    setCardState(idx, card, 'unrevealed');
+  }
+}
+
+function setCardState(idx, card, state) {
+  cardStates[idx] = state;
+  applyCardState(idx, card);
+  updateProgress();
+}
+
+function applyCardState(idx, card) {
+  const state = cardStates[idx];
+  card.classList.remove('state-unrevealed', 'state-question', 'state-answer');
+  card.classList.add(`state-${state}`);
+  const hint = card.querySelector('.q-hint');
+  if (state === 'unrevealed') {
+    hint.textContent = 'Tap to reveal question';
+    hint.style.display = '';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+function updateProgress() {
+  if (!activeTheme) return;
+  const revealed = cardStates.filter(s => s === 'answer').length;
+  const total = activeTheme.questions.length;
+  headerProgress.textContent = `${revealed}/${total} answered`;
+}
+
+/* ══════════════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════════════ */
+backBtn.addEventListener('click', showThemeScreen);
+
+resetBtn.addEventListener('click', () => {
+  if (!activeTheme) return;
+  cardStates = activeTheme.questions.map(() => 'unrevealed');
+  const cards = questionList.querySelectorAll('.q-card');
+  cards.forEach((card, idx) => applyCardState(idx, card));
+  updateProgress();
+  questionScreen.scrollTop = 0;
+});
+
+/* ══════════════════════════════════════════════════
+   UTILITY
+══════════════════════════════════════════════════ */
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/* ══════════════════════════════════════════════════
+   TEAM MANAGEMENT
+══════════════════════════════════════════════════ */
+const MAX_TEAMS = 6;
+const STORAGE_KEY = 'triviaTeams';
+const TEAM_COLORS = ['#d946ef', '#f97316', '#22d3ee', '#4ade80', '#facc15', '#f87171'];
+
+function loadTeams() {
+  try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveTeams(teams) {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(teams));
+}
+
+function addTeam() {
+  const teams = loadTeams();
+  if (teams.length >= MAX_TEAMS) return;
+  teams.push({ name: '', score: 0 });
+  saveTeams(teams);
+  renderHomeScoreboard();
+  renderGameScoreboard();
+  // focus the new input
+  const inputs = document.querySelectorAll('#team-list-home .team-name-input');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function removeTeam(idx) {
+  const teams = loadTeams();
+  teams.splice(idx, 1);
+  saveTeams(teams);
+  renderHomeScoreboard();
+  renderGameScoreboard();
+}
+
+function updateTeamName(idx, name) {
+  const teams = loadTeams();
+  if (teams[idx] !== undefined) teams[idx].name = name;
+  saveTeams(teams);
+  renderGameScoreboard();
+}
+
+function adjustScore(idx, delta) {
+  const teams = loadTeams();
+  if (teams[idx] !== undefined) {
+    teams[idx].score = teams[idx].score + delta;
+    saveTeams(teams);
+    renderHomeScoreboard(idx);
+    renderGameScoreboard();
+  }
+}
+
+function renderHomeScoreboard(focusIdx) {
+  const teams = loadTeams();
+  const list = document.getElementById('team-list-home');
+  const addBtn = document.getElementById('add-team-btn');
+  list.innerHTML = '';
+
+  teams.forEach((team, idx) => {
+    const row = document.createElement('div');
+    row.className = 'team-row';
+    row.style.setProperty('--team-color', TEAM_COLORS[idx % TEAM_COLORS.length]);
+    row.innerHTML = `
+      <input class="team-name-input" type="text" placeholder="Team ${idx + 1}" maxlength="24"
+             aria-label="Team ${idx + 1} name" value="${escapeAttr(team.name)}">
+      <span class="team-score">${team.score}</span>
+      <button class="score-btn plus"  aria-label="Add point to team ${idx + 1}">+</button>
+      <button class="score-btn minus" aria-label="Subtract point from team ${idx + 1}">&#8722;</button>
+      <button class="remove-btn"      aria-label="Remove team ${idx + 1}">&#10005;</button>
+    `;
+    const input = row.querySelector('.team-name-input');
+    input.addEventListener('input', () => updateTeamName(idx, input.value));
+    row.querySelector('.score-btn.plus').addEventListener('click',  () => adjustScore(idx,  1));
+    row.querySelector('.score-btn.minus').addEventListener('click', () => adjustScore(idx, -1));
+    row.querySelector('.remove-btn').addEventListener('click', () => removeTeam(idx));
+    list.appendChild(row);
+  });
+
+  addBtn.disabled = teams.length >= MAX_TEAMS;
+  addBtn.textContent = teams.length >= MAX_TEAMS ? 'Max 6 teams reached' : '+ Add Team';
+}
+
+function renderGameScoreboard() {
+  const teams = loadTeams();
+  const inner = document.getElementById('team-list-game');
+  inner.innerHTML = '';
+
+  if (teams.length === 0) {
+    inner.innerHTML = '<span class="scoreboard-game-empty">No teams — add teams on the home screen.</span>';
+    return;
+  }
+
+  teams.forEach((team, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'team-chip';
+    chip.style.setProperty('--team-color', TEAM_COLORS[idx % TEAM_COLORS.length]);
+    const displayName = escapeHtml(team.name.trim() || `Team ${idx + 1}`);
+    chip.innerHTML = `
+      <span class="team-chip-name">${displayName}</span>
+      <span class="team-chip-score">${team.score}</span>
+      <button class="chip-btn minus" aria-label="Subtract point from ${displayName}">&#8722;</button>
+      <button class="chip-btn plus"  aria-label="Add point to ${displayName}">+</button>
+    `;
+    chip.querySelector('.chip-btn.plus').addEventListener('click',  () => adjustScore(idx,  1));
+    chip.querySelector('.chip-btn.minus').addEventListener('click', () => adjustScore(idx, -1));
+    inner.appendChild(chip);
+  });
+}
+
+function escapeAttr(str) {
+  return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
+document.getElementById('add-team-btn').addEventListener('click', addTeam);
+
+/* ══════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════ */
+buildThemeGrid();
+renderHomeScoreboard();
+renderGameScoreboard();
+</script>
+</body>
+</html>
