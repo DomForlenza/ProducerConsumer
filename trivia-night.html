@@ -1088,7 +1088,7 @@ function updateTeamName(idx, name) {
 function adjustScore(idx, delta) {
   const teams = loadTeams();
   if (teams[idx] !== undefined) {
-    teams[idx].score = Math.max(0, teams[idx].score + delta);
+    teams[idx].score = teams[idx].score + delta;
     saveTeams(teams);
     renderHomeScoreboard(idx);
     renderGameScoreboard();
